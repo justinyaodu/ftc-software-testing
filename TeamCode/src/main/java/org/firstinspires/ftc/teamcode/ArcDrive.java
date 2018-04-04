@@ -29,8 +29,23 @@ public class ArcDrive extends LinearOpMode {
 
         waitForStart();
 
-        driveStraight(24);
-        //driveArc(2 * Math.PI, 18);
+        for (int radius = 0; radius <= 32; radius += 4) {
+            for (int i = 1; i <= 3; i++) {
+                telemetry.addData("radius", radius);
+                telemetry.addData("trial", i);
+                telemetry.update();
+                while (!input.a() && opModeIsActive());
+                driveArc(2 * Math.PI, -radius);
+            }
+        }
+
+        if (Math.random() > -1) return;
+
+        //driveStraight(24);
+        driveArc(2 * Math.PI, -36);
+        driveArc(2 * Math.PI, -24);
+        driveArc(-2 * Math.PI, -18);
+        driveArc(-2 * Math.PI, -12);
 
         sleep(1000);
 
@@ -56,11 +71,15 @@ public class ArcDrive extends LinearOpMode {
         }
     }
 
+    /**
+     * Drives in a circular arc.
+     * @param angle the angle to drive around the circle (in radians); positive is counterclockwise
+     * @param radius the radius of the circle, also the offset of the circle center along the x-axis
+     */
     private void driveArc(double angle, double radius) {
-        radius *= 6.0 / 7 * 48 / 45;
-
-        angle *= (2 * Math.PI + 0.6) / (2 * Math.PI);
-        angle = Math.abs(angle);
+        //multiply by correction factors
+        //radius *= 6.0 / 7 * 48 / 45;
+        //angle *= (2 * Math.PI + 0.6) / (2 * Math.PI);
 
         if (angle == 0) {
             return;
@@ -69,8 +88,8 @@ public class ArcDrive extends LinearOpMode {
         leftRadius = radius + Robot.DRIVE_WIDTH / 2;
         rightRadius = radius - Robot.DRIVE_WIDTH / 2;
 
-        leftDistance = Math.abs(leftRadius * angle);
-        rightDistance = Math.abs(rightRadius * angle);
+        leftDistance = leftRadius * angle * -1;
+        rightDistance = rightRadius * angle * -1;
 
         drive(leftDistance, rightDistance);
     }
@@ -86,13 +105,20 @@ public class ArcDrive extends LinearOpMode {
         robot.DRIVE_LEFT.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         robot.DRIVE_RIGHT.setMode(DcMotor.RunMode.RUN_TO_POSITION);
 
-        double leftPower = DRIVE_POWER * left / Math.max(left, right);
-        double rightPower = DRIVE_POWER * right / Math.max(left, right);
+        double leftPower = DRIVE_POWER * left / Math.max(Math.abs(left), Math.abs(right));
+        double rightPower = DRIVE_POWER * right / Math.max(Math.abs(left), Math.abs(right));
 
         robot.DRIVE_LEFT.setPower(leftPower);
         robot.DRIVE_RIGHT.setPower(rightPower);
 
         while (robot.DRIVE_LEFT.isBusy() && robot.DRIVE_RIGHT.isBusy() && opModeIsActive()) {
+            if (input.b())
+            {
+                robot.DRIVE_LEFT.setTargetPosition(robot.DRIVE_LEFT.getCurrentPosition());
+                robot.DRIVE_RIGHT.setTargetPosition(robot.DRIVE_RIGHT.getCurrentPosition());
+                telemetry.addLine("user stopped");
+                telemetry.update();
+            }
             telemetry();
         }
     }
